@@ -29,19 +29,27 @@ const updateImage = index => {
     context.drawImage(img, 0, 0);
 }
 
+let targetFrameIndex = 1;
+let currentRenderedFrame = 1;
+const ease = 0.05; // Smoother tracking
+
 window.addEventListener('scroll', () => {  
     const scrollTop = document.documentElement.scrollTop;
     const maxScrollTop = document.documentElement.scrollHeight - window.innerHeight;
     const scrollFraction = scrollTop / maxScrollTop;
-    const frameIndex = Math.min(
+    targetFrameIndex = Math.min(
         frameCount,
-        Math.ceil(scrollFraction * frameCount)
+        Math.max(1, Math.ceil(scrollFraction * frameCount))
     );
-    
-    // Make sure we don't request frame 0
-    if (frameIndex > 0) {
-        requestAnimationFrame(() => updateImage(frameIndex));
-    }
 });
+
+const renderLoop = () => {
+    if (Math.abs(targetFrameIndex - currentRenderedFrame) > 0.1) {
+        currentRenderedFrame += (targetFrameIndex - currentRenderedFrame) * ease;
+        updateImage(Math.round(currentRenderedFrame));
+    }
+    requestAnimationFrame(renderLoop);
+};
+renderLoop();
 
 preloadImages();
