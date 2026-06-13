@@ -405,6 +405,11 @@
             context.drawImage(img, 0, 0);
         }
 
+        let targetFrameIndex = 1;
+        let currentRenderedFrame = 1;
+        let targetOpacity = 0;
+        let currentOpacity = 0;
+
         window.addEventListener('scroll', () => {  
             const wrapper = document.querySelector('.animation-wrapper');
             if (!wrapper) return;
@@ -414,25 +419,42 @@
             
             let scrollFraction = Math.max(0, Math.min(1, scrollPixels / maxScrollPixels));
             
-            const frameIndex = Math.min(
+            targetFrameIndex = Math.min(
                 frameCount,
                 Math.max(1, Math.ceil(scrollFraction * frameCount))
             );
             
-            requestAnimationFrame(() => updateImage(frameIndex));
-
-            // Fade in car name between 90% and 100% scroll
-            const overlay = document.getElementById('car-name-overlay');
-            if (overlay) {
-                if (scrollFraction > 0.90) {
-                    // Map 0.90-1.00 to 0.0-1.0
-                    const opacity = (scrollFraction - 0.90) * 10;
-                    overlay.style.opacity = Math.min(1, opacity);
-                } else {
-                    overlay.style.opacity = 0;
-                }
+            if (scrollFraction > 0.90) {
+                targetOpacity = Math.min(1, (scrollFraction - 0.90) * 10);
+            } else {
+                targetOpacity = 0;
             }
         });
+
+        const ease = 0.08; // Adjust for smoother vs faster tracking
+        const renderLoop = () => {
+            let needsUpdate = false;
+
+            if (Math.abs(targetFrameIndex - currentRenderedFrame) > 0.5) {
+                currentRenderedFrame += (targetFrameIndex - currentRenderedFrame) * ease;
+                updateImage(Math.round(currentRenderedFrame));
+                needsUpdate = true;
+            }
+
+            if (Math.abs(targetOpacity - currentOpacity) > 0.005) {
+                currentOpacity += (targetOpacity - currentOpacity) * ease;
+                const overlay = document.getElementById('car-name-overlay');
+                if (overlay) {
+                    overlay.style.opacity = currentOpacity;
+                }
+                needsUpdate = true;
+            }
+
+            requestAnimationFrame(renderLoop);
+        };
+        
+        // Start the render loop
+        renderLoop();
 
         preloadImages();
     </script>
